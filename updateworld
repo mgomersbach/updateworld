@@ -1,0 +1,262 @@
+#!/usr/bin/env bash
+# -*- coding: utf-8 -*-
+#
+#  updateworld
+#
+#  Copyright 2016-2020 Mark Gomersbach <mark@gomersbach.nl>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+
+set -e
+shopt -u nullglob
+
+# Source gentoo functions for output
+if [ -f /lib/rc/sh/functions.sh ]; then
+    # shellcheck disable=SC1091
+    . /lib/rc/sh/functions.sh
+else
+    # shellcheck disable=SC1091
+    . /lib64/rc/sh/functions.sh
+fi
+
+# Default emerge settings
+EMERGE_GLOBAL_OPTS="--binpkg-respect-use=y --binpkg-changed-deps=y --nospinner"
+KEEP_KERNELS=4
+
+# Set concurrency
+THREADS=$(getconf _NPROCESSORS_ONLN)
+CORES=$(grep "^core id" /proc/cpuinfo | sort -u | wc -l)
+EMERGE_GLOBAL_OPTS+=" -j${THREADS} --load-average=${CORES}"
+export MAKEOPTS="-j${THREADS} -l${CORES}"
+
+# Detect probable chroot
+CHROOTED=$(if [[ $(ls -di /) != "2 /" ]]; then echo true; else echo false; fi)
+
+main() {
+    # Bring it all together
+    update_portage
+    update_tc
+    update_kernel
+    update_world
+
+    # Tear it down
+    clean_world
+    [[ "${debug}"   ==  "true" ]] && emerge --info
+    [[ "${verbose}" ==  "true" ]] && eselect news read
+
+    exit 0
+}
+
+# Set terminal title
+settitle()
+{
+    if [[ ${CHROOTED} = false ]]; then
+        case ${TERM} in
+            xterm*)
+            local title="\[\033]0;${*}\007\]"
+            ;;
+            *rxvt*)
+            local title="\[\033]0;${*}\007\]"
+            ;;
+        esac
+        case $SHELL in
+            *zsh)
+            trap 'echo -ne "\e]0;${@}\007"' DEBUG
+            ;;
+            *bash)
+            local prompt
+            prompt="${PS1//\\\[\\033\]0;.*\\007\\\]//}"
+            PS1="${title}${prompt}"
+            ;;
+        esac
+    fi
+}
+
+# Split output
+debug() {
+    local func=$1
+    local msg=$2
+    settitle "${msg}"
+    if [[ "${debug}" == "true" ]]; then
+        echo "${func}(): ${msg}" >&2
+        esyslog "user.info" "updateworld" "${func}(): ${msg}"
+    fi
+}
+
+# Return 1 after fail
+die() {
+    local msg=$1
+    settitle "${msg}"
+    eerror "${msg}"
+    kill $$
+    exit 1
+}
+
+# Argument default
+debug="false"
+help="false"
+nocolor="false"
+logfile="/tmp/updateworld.log"
+verbose="false"
+
+# Flag handling
+while getopts 'dhnv' flag; do
+  case "${flag}" in
+    d) debug="true" ;;
+    h) help="true" ;;
+    n) nocolor="true" ;;
+    v) verbose="true" ;;
+    *) eerror "Unexpected option ${flag}" ;;
+  esac
+done
+
+# Help message
+usage() {
+    cat <<EOF
+Usage:
+    $0 [options]
+
+Options:
+    -d         Output debugging messages
+    -h         This
+    -n         No colored output
+    -v         Be verbose (show command output)
+EOF
+}
+
+# Check for help
+if [[ ${help} == "true" ]]; then
+    usage
+    exit 0
+fi
+
+# Output router
+spawn() {
+    local cmd=$1
+    settitle "${cmd}"
+    debug spawn "running command '${cmd}'"
+    rm ${logfile}.cur 2>/dev/null
+    if [[ ${verbose} == "true" ]]; then
+        (eval "${cmd}" 2>&1; echo $? > /tmp/spawn_exitcode) | tee -a ${logfile} ${logfile}.cur
+    else
+        (eval "${cmd}" 2>&1; echo $? > /tmp/spawn_exitcode) | tee -a ${logfile} ${logfile}.cur >/dev/null 2>&1
+    fi
+    spawn_exitcode=$([[ -f /tmp/spawn_exitcode ]] && cat /tmp/spawn_exitcode)
+    rm /tmp/spawn_exitcode &>/dev/null
+
+    return "${spawn_exitcode}"
+}
+
+# Spawn + emerge alias
+spawn_e() {
+    local cmd=$1
+    tospawn="emerge ${EMERGE_GLOBAL_OPTS} ${cmd}"
+    spawn "${tospawn}"
+}
+
+pre_clean() {
+    ebegin "Cleaning up old emerge resume information"
+    spawn "emaint --fix cleanresume" || ewarn "Could not clean old emerge resume information"
+    eend 0
+}
+
+# Update portage
+update_portage() {
+    ebegin "Updating portage"
+    spawn "emaint sync -A" || die "Could not sync"
+    spawn_e "-1u portage" || die "Could not emerge portage"
+    eend 0
+}
+# Emerge new toolchain if available and select bottom option binutils and gcc-config
+update_tc() {
+    ebegin "Updating toolchain"
+    spawn_e "-u1 sys-libs/glibc" || ewarn "Could not update glibc"
+    spawn_e "-u1 sys-devel/gcc sys-devel/binutils" || ewarn "Could not update gcc/binutils"
+    spawn "gcc-config $(gcc-config -l |tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new gcc"
+    spawn "eselect binutils set $(eselect binutils list | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new binutils"
+    spawn_e "--depclean sys-devel/gcc sys-devel/binutils" || ewarn "Could not remove old toolchain packages slots"
+    spawn "openvt env-update && source /etc/profile" || ewarn "failed to update environment variables and profile"
+    eend 0
+}
+
+update_kernel() {
+    ebegin "Updating kernel"
+    mount | grep -q /boot || mount /boot || ewarn "Could not mount boot"
+    spawn "eclean-kernel -n ${KEEP_KERNELS}" || ewarn "Could not remove old kernels"
+    if emerge -1pu sys-kernel/gentoo-sources | grep 'ebuild  N'; then
+        # Emerge new kernel
+        spawn "emerge -1u sys-kernel/gentoo-sources" || ewarn "Could not update kernel"
+        # Select newest kernel available
+        spawn "eselect kernel set $(eselect kernel list | tail -n 1 | awk '{print $2}')" || die "Could not switch to new kernel"
+        # Get newest config or grab current running
+        pushd /usr/src/linux > /dev/null 2>&1 || die "Could not change to kernel folder"
+        [[ ! -e .config ]] && zcat /proc/config.gz > .config
+        # Remove initramfs and firmware src line
+        sed -i 's/CONFIG_INITRAMFS_SOURCE=.*/CONFIG_INITRAMFS_SOURCE=""/' .config
+        sed -i 's/CONFIG_EXTRA_FIRMWARE=.*/CONFIG_EXTRA_FIRMWARE=""/' .config
+        spawn "make olddefconfig" || die "Could not upgrade config"
+        spawn "make -j${THREADS} && genkernel --btrfs all" || die "Could not create kernel"
+        spawn_e "@module-rebuild --exclude '*-bin'" || ewarn "Could not update (all) modules"
+        if spawn "mount -o remount,rw /sys/firmware/efi/efivars"; then
+            spawn "grub-install --efi-directory=/boot --themes=grub2-solarized" || ewarn "Could not install efi grub"
+        else
+            firstdisk=$(lsblk | head -2 | tail -1 | awk '{print $1}')
+            spawn "grub-install --target=i386-pc --themes=grub2-solarized /dev/${firstdisk}" || ewarn "Could not install bios grub"
+        fi
+        spawn "grub-mkconfig -o /boot/grub/grub.cfg" || ewarn "Could not update grub"
+        spawn "make clean && make mrproper && rm -rf /var/tmp/genkernel/*" || ewarn "Could not clean kernel intermediate files"
+        spawn "umount /boot" || ewarn "Could not unmount /boot"
+        popd > /dev/null 2>&1 || ewarn "Could not change to original folder"
+    else
+        ewarn "No newer version detected, skipping kernel upgrade"
+    fi
+    eend 0
+}
+
+# Emerge --update --deep --newuse @world with build time dependencies, depth: ITSOVERNINETHOUSAND
+update_world() {
+    ebegin "Updating @world"
+    pre_clean
+    spawn_e "-u1 @system --backtrack=9001 --keep-going" || ewarn "Could not update system"
+    spawn_e "-uUDN @world --with-bdeps=y --changed-deps --backtrack=9001 --keep-going" || ewarn "Could not update world"
+    spawn_e "@smart-live-rebuild" || ewarn "Could not update bleeding edge packages"
+    spawn_e "@preserved-rebuild" || ewarn "Could not rebuild preserveds"
+    eend 0
+}
+
+# Clean up world,repair gaps that are left and general maintenance
+clean_world() {
+    ebegin "Cleaning @world"
+    spawn "revdep-rebuild" || ewarn "Could not rebuild reverse dependencies"
+    spawn "emaint --fix merges" || ewarn "Could not fix all failed merges"
+    spawn "emerge --depclean" || ewarn "Could not run depclean"
+    spawn "emaint --purge merges" || ewarn "Could not purge all failed merges"
+    spawn "emaint --fix all" || ewarn "Could not do general maintenance"
+    spawn "emaint --clean -t 1 logs" || ewarn "Could not clean logs"
+    eend 0
+}
+
+# Match emerge verbosity
+[[ "${verbose}" ==  "true" ]] && [[ "${debug}"   ==  "false" ]]  && EMERGE_GLOBAL_OPTS+=" -qv"
+[[ "${debug}"   ==  "true" ]] && [[ "${verbose}" ==  "false" ]]  && EMERGE_GLOBAL_OPTS+=" -v"
+[[ "${verbose}" ==  "true" ]] && [[ "${debug}"   ==  "true" ]] && EMERGE_GLOBAL_OPTS+=" -v"
+
+# nocolor overwrites output module
+[[ "${nocolor}" == "true" ]] && unset GOOD WARN BAD HILITE BRACKET NORMAL
+
+if [[ "$0" = "${BASH_SOURCE[*]}" ]] ; then
+    main "${@}"
+fi
