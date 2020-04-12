@@ -24,12 +24,12 @@ set -e
 shopt -u nullglob
 
 # Source gentoo functions for output
-if [ -f /lib/rc/sh/functions.sh ]; then
+if [ -f /lib/gentoo/functions.sh ]; then
     # shellcheck disable=SC1091
-    . /lib/rc/sh/functions.sh
+    . /lib/gentoo/functions.sh
 else
     # shellcheck disable=SC1091
-    . /lib64/rc/sh/functions.sh
+    . /lib64/gentoo/functions.sh
 fi
 
 # Default emerge settings
