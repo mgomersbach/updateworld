@@ -15,17 +15,17 @@ jobs:
         with:
           path: 'updateworld'
 
-  shellcheck:
-    name: 'Shellcheck'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Check out code'
-        uses: actions/checkout@v2
+  # shellcheck:
+  #   name: 'Shellcheck'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: 'Check out code'
+  #       uses: actions/checkout@v2
 
-      - name: 'Run Shellcheck'
-        uses: azohra/shell-linter@develop
-        with:
-          path: 'updateworld'
+  #     - name: 'Run Shellcheck'
+  #       uses: azohra/shell-linter@develop@v0.2.0
+  #       with:
+  #         path: 'updateworld'
 
   semantic_version:
     name: 'Semantic versioning'
