@@ -10,6 +10,8 @@ jobs:
 
       - name: 'Test formatting'
         uses: 'bltavares/actions/shfmt@master'
+        env:
+          SHFMT_ARGS: '-i 2 -ci'
         with:
           path: 'updateworld'
 
