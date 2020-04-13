@@ -54,15 +54,15 @@ main() {
 
   # Tear it down
   clean_world
-  [[ "${debug}" == "true" ]] && emerge --info
-  [[ "${verbose}" == "true" ]] && eselect news read
+  [[ ${debug} == "true" ]] && emerge --info
+  [[ ${verbose} == "true" ]] && eselect news read
 
   exit 0
 }
 
 # Set terminal title
 settitle() {
-  if [[ ${CHROOTED} = false ]]; then
+  if [[ ${CHROOTED} == false ]]; then
     case ${TERM} in
       xterm*)
         local title="\[\033]0;${*}\007\]"
@@ -89,7 +89,7 @@ debug() {
   local func=$1
   local msg=$2
   settitle "${msg}"
-  if [[ "${debug}" == "true" ]]; then
+  if [[ ${debug} == "true" ]]; then
     echo "${func}(): ${msg}" >&2
     esyslog "user.info" "updateworld" "${func}(): ${msg}"
   fi
@@ -255,13 +255,13 @@ clean_world() {
 }
 
 # Match emerge verbosity
-[[ "${verbose}" == "true" ]] && [[ "${debug}" == "false" ]] && EMERGE_GLOBAL_OPTS+=" -qv"
-[[ "${debug}" == "true" ]] && [[ "${verbose}" == "false" ]] && EMERGE_GLOBAL_OPTS+=" -v"
-[[ "${verbose}" == "true" ]] && [[ "${debug}" == "true" ]] && EMERGE_GLOBAL_OPTS+=" -v"
+[[ ${verbose} == "true" ]] && [[ ${debug} == "false" ]] && EMERGE_GLOBAL_OPTS+=" -qv"
+[[ ${debug} == "true" ]] && [[ ${verbose} == "false" ]] && EMERGE_GLOBAL_OPTS+=" -v"
+[[ ${verbose} == "true" ]] && [[ ${debug} == "true" ]] && EMERGE_GLOBAL_OPTS+=" -v"
 
 # nocolor overwrites output module
-[[ "${nocolor}" == "true" ]] && unset GOOD WARN BAD HILITE BRACKET NORMAL
+[[ ${nocolor} == "true" ]] && unset GOOD WARN BAD HILITE BRACKET NORMAL
 
-if [[ "$0" = "${BASH_SOURCE[*]}" ]]; then
+if [[ $0 == "${BASH_SOURCE[*]}" ]]; then
   main "${@}"
 fi
