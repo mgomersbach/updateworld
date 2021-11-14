@@ -3,7 +3,7 @@
 #
 #  updateworld
 #
-#  Copyright 2016-2020 Mark Gomersbach <mark@gomersbach.nl>
+#  Copyright 2016-2021 Mark Gomersbach <mark@gomersbach.nl>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -47,15 +47,16 @@ CHROOTED=$(if [[ $(ls -di /) != "2 /" ]]; then echo true; else echo false; fi)
 
 main() {
   # Bring it all together
+  [[ ${binaries_only} == "true" ]] && EMERGE_GLOBAL_OPTS+=" -Bn --rebuilt-binaries n"
   update_portage
   update_tc
-  update_kernel
+  [[ ${binaries_only} == "false" ]] && update_kernel
   update_world
 
   # Tear it down
-  clean_world
-  [[ ${debug} == "true" ]] && emerge --info
-  [[ ${verbose} == "true" ]] && eselect news read
+  [[ ${binaries_only} == "false" ]] && clean_world
+  [[ ${debug} == "true" && ${binaries_only} == "false" ]] && emerge --info
+  [[ ${verbose} == "true" && ${binaries_only} == "false" ]] && eselect news read
 
   exit 0
 }
@@ -106,15 +107,17 @@ die() {
 
 # Argument default
 debug="false"
+binaries_only="false"
 help="false"
 nocolor="false"
 logfile="/tmp/updateworld.log"
 verbose="false"
 
 # Flag handling
-while getopts 'dhnv' flag; do
+while getopts 'dbhnv' flag; do
   case "${flag}" in
     d) debug="true" ;;
+    b) binaries_only="true" ;;
     h) help="true" ;;
     n) nocolor="true" ;;
     v) verbose="true" ;;
@@ -130,6 +133,7 @@ Usage:
 
 Options:
     -d         Output debugging messages
+    -b         Build binaries only, no actual install
     -h         This
     -n         No colored output
     -v         Be verbose (show command output)
@@ -190,10 +194,12 @@ update_tc() {
   ebegin "Updating toolchain"
   spawn_e "-u1 sys-libs/glibc" || ewarn "Could not update glibc"
   spawn_e "-u1 sys-devel/gcc sys-devel/binutils" || ewarn "Could not update gcc/binutils"
-  spawn "gcc-config $(gcc-config -l | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new gcc"
-  spawn "eselect binutils set $(eselect binutils list | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new binutils"
-  spawn_e "--depclean sys-devel/gcc sys-devel/binutils" || ewarn "Could not remove old toolchain packages slots"
-  spawn "openvt env-update && source /etc/profile" || ewarn "failed to update environment variables and profile"
+  if [[ ${binaries_only} == "false" ]]; then
+    spawn "gcc-config $(gcc-config -l | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new gcc"
+    spawn "eselect binutils set $(eselect binutils list | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new binutils"
+    spawn_e "--depclean sys-devel/gcc sys-devel/binutils" || ewarn "Could not remove old toolchain packages slots"
+    spawn "openvt env-update && source /etc/profile" || ewarn "failed to update environment variables and profile"
+  fi
   eend 0
 }
 
@@ -201,7 +207,7 @@ update_kernel() {
   ebegin "Updating kernel"
   mount | grep -q /boot || mount /boot || ewarn "Could not mount boot"
   spawn "eclean-kernel -n ${KEEP_KERNELS}" || ewarn "Could not remove old kernels"
-  if emerge -1pu sys-kernel/gentoo-sources | grep 'ebuild  N'; then
+  if emerge -1pu sys-kernel/gentoo-sources | grep -q 'ebuild  N'; then
     # Emerge new kernel
     spawn "emerge -1u sys-kernel/gentoo-sources" || ewarn "Could not update kernel"
     # Select newest kernel available
