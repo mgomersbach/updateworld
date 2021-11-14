@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.1.0](https://github.com/mgomersbach/updateworld/compare/1.0.0...1.1.0) (2021-11-14)
+
+
+### Features
+
+* **nomerge:** option to only create binaries ([f0cff1b](https://github.com/mgomersbach/updateworld/commit/f0cff1bbf4b16cebe076941fe928ca6d69417830))
+
 # 1.0.0 (2020-04-13)
 
 
