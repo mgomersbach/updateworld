@@ -207,7 +207,7 @@ update_kernel() {
   ebegin "Updating kernel"
   mount | grep -q /boot || mount /boot || ewarn "Could not mount boot"
   spawn "eclean-kernel -n ${KEEP_KERNELS}" || ewarn "Could not remove old kernels"
-  if emerge -1pu sys-kernel/gentoo-sources | grep -q 'ebuild  N'; then
+  if emerge -1pu sys-kernel/gentoo-sources | grep -qE 'ebuild  N|gentoo-sources'; then
     # Emerge new kernel
     spawn "emerge -1u sys-kernel/gentoo-sources" || ewarn "Could not update kernel"
     # Select newest kernel available
