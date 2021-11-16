@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/mgomersbach/updateworld/compare/1.1.0...1.1.1) (2021-11-16)
+
+
+### Bug Fixes
+
+* **kernel:** detect changes also on deps ([0d29431](https://github.com/mgomersbach/updateworld/commit/0d29431d065873071d00330677d0194dcf270618))
+
 # [1.1.0](https://github.com/mgomersbach/updateworld/compare/1.0.0...1.1.0) (2021-11-14)
 
 
