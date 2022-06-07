@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/mgomersbach/updateworld/compare/1.2.0...1.2.1) (2022-06-07)
+
+
+### Bug Fixes
+
+* **help:** add text for kernel skip ([18dc326](https://github.com/mgomersbach/updateworld/commit/18dc32648645fe81321038916d11c0fdb40c67fb))
+
 # [1.2.0](https://github.com/mgomersbach/updateworld/compare/1.1.1...1.2.0) (2022-06-07)
 
 
