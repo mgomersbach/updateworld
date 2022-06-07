@@ -50,7 +50,7 @@ main() {
   [[ ${binaries_only} == "true" ]] && EMERGE_GLOBAL_OPTS+=" -Bn --rebuilt-binaries n"
   update_portage
   update_tc
-  [[ ${binaries_only} == "false" ]] && update_kernel
+  [[ ${binaries_only} == "false" ]] && [[ ${skipkernel} == "false" ]] && update_kernel
   update_world
 
   # Tear it down
@@ -112,15 +112,17 @@ help="false"
 nocolor="false"
 logfile="/tmp/updateworld.log"
 verbose="false"
+skipkernel="false"
 
 # Flag handling
-while getopts 'dbhnv' flag; do
+while getopts 'dbhnvk' flag; do
   case "${flag}" in
     d) debug="true" ;;
     b) binaries_only="true" ;;
     h) help="true" ;;
     n) nocolor="true" ;;
     v) verbose="true" ;;
+    k) skipkernel="true" ;;
     *) eerror "Unexpected option ${flag}" ;;
   esac
 done
