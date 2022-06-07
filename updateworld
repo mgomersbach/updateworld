@@ -138,6 +138,7 @@ Options:
     -b         Build binaries only, no actual install
     -h         This
     -n         No colored output
+    -k         Skip kernel update
     -v         Be verbose (show command output)
 EOF
 }
