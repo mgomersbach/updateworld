@@ -1,5 +1,17 @@
 # Changelog
 
+# [1.2.0](https://github.com/mgomersbach/updateworld/compare/1.1.1...1.2.0) (2022-06-07)
+
+
+### Bug Fixes
+
+* **ci:** fix semantic-release ([56d9d29](https://github.com/mgomersbach/updateworld/commit/56d9d292b6a1d62bdf7ae2036d4021f2223183e0))
+
+
+### Features
+
+* **skipkernel:** skip building kernel on argument ([a909a21](https://github.com/mgomersbach/updateworld/commit/a909a214e92b338de2ea685d2a9f30a313d44a9b))
+
 ## [1.1.1](https://github.com/mgomersbach/updateworld/compare/1.1.0...1.1.1) (2021-11-16)
 
 
