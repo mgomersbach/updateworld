@@ -191,7 +191,9 @@ pre_clean() {
 # Update portage
 update_portage() {
   ebegin "Updating portage"
-  [[ ${skipsync} == "false" ]] && spawn "emaint sync -A" || die "Could not sync"
+  if [[ ${skipsync} == "false" ]]; then
+    spawn "emaint sync -A" || die "Could not sync"
+  fi
   spawn_e "-1u portage" || die "Could not emerge portage"
   eend 0
 }
