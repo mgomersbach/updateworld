@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/mgomersbach/updateworld/compare/1.2.1...1.2.2) (2023-01-05)
+
+
+### Bug Fixes
+
+* **updateworld:** avoid nested condition ([a7ac76d](https://github.com/mgomersbach/updateworld/commit/a7ac76de5a545f7358fecdc836563f8e2d9c237e))
+
 ## [1.2.1](https://github.com/mgomersbach/updateworld/compare/1.2.0...1.2.1) (2022-06-07)
 
 
