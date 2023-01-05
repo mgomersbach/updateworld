@@ -113,15 +113,17 @@ nocolor="false"
 logfile="/tmp/updateworld.log"
 verbose="false"
 skipkernel="false"
+skipsync="false"
 
 # Flag handling
-while getopts 'dbhnvk' flag; do
+while getopts 'dbhnvsk' flag; do
   case "${flag}" in
     d) debug="true" ;;
     b) binaries_only="true" ;;
     h) help="true" ;;
     n) nocolor="true" ;;
     v) verbose="true" ;;
+    s) skipsync="true" ;;
     k) skipkernel="true" ;;
     *) eerror "Unexpected option ${flag}" ;;
   esac
@@ -139,6 +141,7 @@ Options:
     -h         This
     -n         No colored output
     -k         Skip kernel update
+    -s         Skip portage sync
     -v         Be verbose (show command output)
 EOF
 }
@@ -188,7 +191,7 @@ pre_clean() {
 # Update portage
 update_portage() {
   ebegin "Updating portage"
-  spawn "emaint sync -A" || die "Could not sync"
+  [[ ${skipsync} == "false" ]] && spawn "emaint sync -A" || die "Could not sync"
   spawn_e "-1u portage" || die "Could not emerge portage"
   eend 0
 }
