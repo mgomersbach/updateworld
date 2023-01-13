@@ -114,6 +114,7 @@ logfile="/tmp/updateworld.log"
 verbose="false"
 skipkernel="false"
 skipsync="false"
+skiptoolchaincleanup="false"
 
 # Flag handling
 while getopts 'dbhnvsk' flag; do
@@ -125,6 +126,7 @@ while getopts 'dbhnvsk' flag; do
     v) verbose="true" ;;
     s) skipsync="true" ;;
     k) skipkernel="true" ;;
+    t) skiptoolchaincleanup="true" ;;
     *) eerror "Unexpected option ${flag}" ;;
   esac
 done
@@ -142,6 +144,7 @@ Options:
     -n         No colored output
     -k         Skip kernel update
     -s         Skip portage sync
+    -t         Skip toolchain cleanup
     -v         Be verbose (show command output)
 EOF
 }
@@ -205,7 +208,9 @@ update_tc() {
   if [[ ${binaries_only} == "false" ]]; then
     spawn "gcc-config $(gcc-config -l | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new gcc"
     spawn "eselect binutils set $(eselect binutils list | tail -n 1 | awk '{print $2}')" || ewarn "Could not switch to new binutils"
-    spawn_e "--depclean sys-devel/gcc sys-devel/binutils" || ewarn "Could not remove old toolchain packages slots"
+    if [[ ${skiptoolchaincleanup} == "false" ]]; then
+      spawn_e "--depclean sys-devel/gcc sys-devel/binutils" || ewarn "Could not remove old toolchain packages"
+    fi
     spawn "openvt env-update && source /etc/profile" || ewarn "failed to update environment variables and profile"
   fi
   eend 0
