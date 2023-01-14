@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/mgomersbach/updateworld/compare/1.2.2...1.2.3) (2023-01-14)
+
+
+### Bug Fixes
+
+* **option:** add to flags ([760057a](https://github.com/mgomersbach/updateworld/commit/760057a24052354abbd89aedf2068e390bf7fd28))
+
 ## [1.2.2](https://github.com/mgomersbach/updateworld/compare/1.2.1...1.2.2) (2023-01-05)
 
 
