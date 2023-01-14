@@ -117,7 +117,7 @@ skipsync="false"
 skiptoolchaincleanup="false"
 
 # Flag handling
-while getopts 'dbhnvsk' flag; do
+while getopts 'dbhnvskt' flag; do
   case "${flag}" in
     d) debug="true" ;;
     b) binaries_only="true" ;;
