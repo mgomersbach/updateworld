@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/mgomersbach/updateworld/compare/1.2.3...1.2.4) (2023-01-20)
+
+
+### Bug Fixes
+
+* **tc:** don't clean gcc and binutils in last step ([cdd3905](https://github.com/mgomersbach/updateworld/commit/cdd39058dcdeb2e8b3598f1a801ab1461ad18ea7))
+
 ## [1.2.3](https://github.com/mgomersbach/updateworld/compare/1.2.2...1.2.3) (2023-01-14)
 
 
