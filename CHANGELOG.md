@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/mgomersbach/updateworld/compare/1.2.5...1.2.6) (2025-01-14)
+
+
+### Bug Fixes
+
+* **updateworld:** shfmt error ([a3434af](https://github.com/mgomersbach/updateworld/commit/a3434afc1fff6542372543e574279282435c0e20))
+
 ## [1.2.5](https://github.com/mgomersbach/updateworld/compare/1.2.4...1.2.5) (2025-01-14)
 
 
