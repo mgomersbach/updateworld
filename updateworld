@@ -232,16 +232,9 @@ update_kernel() {
     sed -i 's/CONFIG_INITRAMFS_SOURCE=.*/CONFIG_INITRAMFS_SOURCE=""/' .config
     sed -i 's/CONFIG_EXTRA_FIRMWARE=.*/CONFIG_EXTRA_FIRMWARE=""/' .config
     spawn "make olddefconfig" || die "Could not upgrade config"
-    spawn "make -j${THREADS} && genkernel --btrfs all" || die "Could not create kernel"
+    spawn "make -j${THREADS} && make modules_install && make install" || die "Could not create kernel"
     spawn_e "@module-rebuild --exclude '*-bin'" || ewarn "Could not update (all) modules"
-    if spawn "mount -o remount,rw /sys/firmware/efi/efivars"; then
-      spawn "grub-install --efi-directory=/boot --themes=grub2-solarized" || ewarn "Could not install efi grub"
-    else
-      firstdisk=$(lsblk | head -2 | tail -1 | awk '{print $1}')
-      spawn "grub-install --target=i386-pc --themes=grub2-solarized /dev/${firstdisk}" || ewarn "Could not install bios grub"
-    fi
     spawn "grub-mkconfig -o /boot/grub/grub.cfg" || ewarn "Could not update grub"
-    spawn "make clean && make mrproper && rm -rf /var/tmp/genkernel/*" || ewarn "Could not clean kernel intermediate files"
     spawn "umount /boot" || ewarn "Could not unmount /boot"
     popd >/dev/null 2>&1 || ewarn "Could not change to original folder"
   else
