@@ -259,7 +259,7 @@ clean_world() {
   ebegin "Cleaning @world"
   spawn "revdep-rebuild" || ewarn "Could not rebuild reverse dependencies"
   spawn "emaint --fix merges" || ewarn "Could not fix all failed merges"
-  spawn "emerge --depclean --exclude \"sys-devel/gcc sys-devel/binutils\"" || ewarn "Could not run depclean"
+  spawn 'emerge --depclean --exclude "sys-devel/gcc sys-devel/binutils"' || ewarn "Could not run depclean"
   spawn "emaint --purge merges" || ewarn "Could not purge all failed merges"
   spawn "emaint --fix all" || ewarn "Could not do general maintenance"
   spawn "emaint --clean -t 1 logs" || ewarn "Could not clean logs"
