@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/mgomersbach/updateworld/compare/1.2.4...1.2.5) (2025-01-14)
+
+
+### Bug Fixes
+
+* **updateworld:** remove genkernel dep ([fb9d110](https://github.com/mgomersbach/updateworld/commit/fb9d11024a145bdc5d1d46ee90b16f51e159ce7d))
+
 ## [1.2.4](https://github.com/mgomersbach/updateworld/compare/1.2.3...1.2.4) (2023-01-20)
 
 
